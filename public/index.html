@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceSwap Pro | Real AI Face Swapping</title>
+    <meta name="description" content="Realistic AI face swapping with DeepFaceLab technology">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+        }
+        h1 { 
+            color: #333; 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .upload-section { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 30px; 
+            margin-bottom: 40px;
+        }
+        @media (max-width: 768px) {
+            .upload-section { grid-template-columns: 1fr; }
+        }
+        .upload-box { 
+            border: 3px dashed #ccc; 
+            border-radius: 15px; 
+            padding: 40px 20px; 
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+        .upload-box:hover { 
+            border-color: #667eea; 
+            background: #eef2ff;
+        }
+        .upload-box.dragover { 
+            border-color: #764ba2; 
+            background: #f3e8ff;
+        }
+        .upload-icon { 
+            font-size: 48px; 
+            color: #667eea; 
+            margin-bottom: 20px;
+        }
+        .preview-container { 
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr; 
+            gap: 30px; 
+            margin: 40px 0;
+            align-items: center;
+        }
+        .preview-box { 
+            height: 300px; 
+            border-radius: 15px; 
+            overflow: hidden;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-img { 
+            max-width: 100%; 
+            max-height: 100%; 
+            display: none;
+        }
+        .swap-btn { 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            color: white; 
+            border: none; 
+            padding: 15px 40px; 
+            font-size: 18px; 
+            border-radius: 10px; 
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            transition: transform 0.3s;
+        }
+        .swap-btn:hover { transform: translateY(-2px); }
+        .swap-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .loading { 
+            display: none; 
+            text-align: center; 
+            margin: 20px 0;
+        }
+        .spinner { 
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #667eea; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        .result-section { 
+            display: none; 
+            text-align: center; 
+            margin-top: 40px;
+        }
+        .result-img { 
+            max-width: 100%; 
+            max-height: 500px; 
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 FaceSwap Pro</h1>
+            <p>Realistic AI Face Swapping Powered by DeepFaceLab</p>
+        </header>
+        
+        <div class="upload-section">
+            <div class="upload-box" id="sourceBox">
+                <div class="upload-icon">👤</div>
+                <h3>Source Face</h3>
+                <p>Drag & drop or click to upload</p>
+                <input type="file" id="sourceInput" accept="image/*" style="display: none;">
+            </div>
+            
+            <div class="upload-box" id="targetBox">
+                <div class="upload-icon">🖼️</div>
+                <h3>Target Face</h3>
+                <p>Drag & drop or click to upload</p>
+                <input type="file" id="targetInput" accept="image/*" style="display: none;">
+            </div>
+        </div>
+        
+        <div class="preview-container">
+            <div class="preview-box" id="sourcePreview">
+                <img id="sourceImg" class="preview-img" alt="Source">
+                <div>👤 Source Face</div>
+            </div>
+            
+            <div style="text-align: center;">
+                <div style="font-size: 40px; color: #667eea;">⇄</div>
+                <p>AI Face Swap</p>
+            </div>
+            
+            <div class="preview-box" id="targetPreview">
+                <img id="targetImg" class="preview-img" alt="Target">
+                <div>🖼️ Target Face</div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing with AI...</p>
+            <div style="width: 300px; height: 6px; background: #eee; border-radius: 3px; margin: 20px auto;">
+                <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; transition: width 0.3s;"></div>
+            </div>
+        </div>
+        
+        <button class="swap-btn" id="swapBtn" disabled>🔮 Generate Face Swap</button>
+        
+        <div class="result-section" id="resultSection">
+            <h2>✨ Face Swap Result</h2>
+            <img id="resultImg" class="result-img" alt="Result">
+            <div style="margin-top: 20px;">
+                <button class="swap-btn" id="downloadBtn" style="background: #10b981;">📥 Download Result</button>
+                <button class="swap-btn" id="newBtn" style="background: #6366f1; margin-left: 10px;">🔄 New Swap</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // Get DOM elements
+        const sourceInput = document.getElementById('sourceInput');
+        const targetInput = document.getElementById('targetInput');
+        const sourceBox = document.getElementById('sourceBox');
+        const targetBox = document.getElementById('targetBox');
+        const sourceImg = document.getElementById('sourceImg');
+        const targetImg = document.getElementById('targetImg');
+        const swapBtn = document.getElementById('swapBtn');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const progressBar = document.getElementById('progressBar');
+        const resultSection = document.getElementById('resultSection');
+        const resultImg = document.getElementById('resultImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const newBtn = document.getElementById('newBtn');
+        const notification = document.getElementById('notification');
+        
+        // State
+        let sourceFile = null;
+        let targetFile = null;
+        let resultBlob = null;
+        
+        // Initialize
+        init();
+        
+        function init() {
+            // Setup event listeners
+            setupDragAndDrop();
+            setupFileInputs();
+            setupButtons();
+            
+            // Check if backend is running
+            checkBackend();
+        }
+        
+        function setupDragAndDrop() {
+            [sourceBox, targetBox].forEach((box, index) => {
+                const isSource = index === 0;
+                
+                box.addEventListener('click', () => {
+                    const input = isSource ? sourceInput : targetInput;
+                    input.click();
+                });
+                
+                box.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    box.classList.add('dragover');
+                });
+                
+                box.addEventListener('dragleave', () => {
+                    box.classList.remove('dragover');
+                });
+                
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    box.classList.remove('dragover');
+                    
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        handleFileUpload(file, isSource ? 'source' : 'target');
+                    }
+                });
+            });
+        }
+        
+        function setupFileInputs() {
+            sourceInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    handleFileUpload(e.target.files[0], 'source');
+                }
+            });
+            
+            targetInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    handleFileUpload(e.target.files[0], 'target');
+                }
+            });
+        }
+        
+        function handleFileUpload(file, type) {
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                showNotification('Please upload an image file', 'error');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('Image must be less than 10MB', 'error');
+                return;
+            }
+            
+            // Update state
+            if (type === 'source') {
+                sourceFile = file;
+                sourceBox.innerHTML = '<div class="upload-icon">✓</div><h3>Source Selected</h3>';
+            } else {
+                targetFile = file;
+                targetBox.innerHTML = '<div class="upload-icon">✓</div><h3>Target Selected</h3>';
+            }
+            
+            // Preview image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = type === 'source' ? sourceImg : targetImg;
+                const previewBox = type === 'source' ? sourceBox : targetBox;
+                
+                img.src = e.target.result;
+                img.style.display = 'block';
+                previewBox.querySelector('div').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // Enable swap button if both files are uploaded
+            if (sourceFile && targetFile) {
+                swapBtn.disabled = false;
+            }
+            
+            showNotification(`${type === 'source' ? 'Source' : 'Target'} image uploaded`, 'success');
+        }
+        
+        async function performFaceSwap() {
+            if (!sourceFile || !targetFile) {
+                showNotification('Please upload both images', 'error');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            swapBtn.disabled = true;
+            updateProgress(10, 'Preparing images...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('source', sourceFile);
+                formData.append('target', targetFile);
+                
+                // Update progress
+                const steps = [
+                    {progress: 30, text: 'Uploading to server...'},
+                    {progress: 50, text: 'Processing with AI...'},
+                    {progress: 70, text: 'Generating result...'},
+                    {progress: 90, text: 'Finalizing...'}
+                ];
+                
+                for (const step of steps) {
+                    updateProgress(step.progress, step.text);
+                    await delay(1000);
+                }
+                
+                // Call our backend API
+                updateProgress(95, 'Almost done...');
+                
+                const response = await fetch('/api/swap', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Face swap failed');
+                }
+                
+                // Get the result image
+                resultBlob = await response.blob();
+                const resultUrl = URL.createObjectURL(resultBlob);
+                resultImg.src = resultUrl;
+                
+                // Show result
+                updateProgress(100, 'Complete!');
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    resultSection.style.display = 'block';
+                    resultSection.scrollIntoView({ behavior: 'smooth' });
+                    showNotification('Face swap completed successfully!', 'success');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Face swap error:', error);
+                loading.style.display = 'none';
+                swapBtn.disabled = false;
+                
+                // Try simulation as fallback
+                if (error.message.includes('simulation')) {
+                    showNotification('Using simulation mode', 'info');
+                    simulateFaceSwap();
+                } else {
+                    showNotification(error.message || 'Failed to process face swap', 'error');
+                }
+            }
+        }
+        
+        function simulateFaceSwap() {
+            // Simple simulation - create a composite image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Load both images
+            const sourceImage = new Image();
+            const targetImage = new Image();
+            
+            sourceImage.onload = () => {
+                targetImage.onload = () => {
+                    canvas.width = targetImage.width;
+                    canvas.height = targetImage.height;
+                    
+                    // Draw target image
+                    ctx.drawImage(targetImage, 0, 0);
+                    
+                    // Draw source face on target (simplified)
+                    const faceSize = Math.min(targetImage.width, targetImage.height) * 0.4;
+                    const x = (targetImage.width - faceSize) / 2;
+                    const y = (targetImage.height - faceSize) / 3;
+                    
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x + faceSize/2, y + faceSize/2, faceSize/2, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(sourceImage, x, y, faceSize, faceSize);
+                    ctx.restore();
+                    
+                    // Get result
+                    canvas.toBlob((blob) => {
+                        resultBlob = blob;
+                        resultImg.src = URL.createObjectURL(blob);
+                        loading.style.display = 'none';
+                        resultSection.style.display = 'block';
+                        showNotification('Simulation completed', 'success');
+                    }, 'image/jpeg', 0.9);
+                };
+                targetImage.src = URL.createObjectURL(targetFile);
+            };
+            sourceImage.src = URL.createObjectURL(sourceFile);
+        }
+        
+        function setupButtons() {
+            swapBtn.addEventListener('click', performFaceSwap);
+            
+            downloadBtn.addEventListener('click', () => {
+                if (!resultBlob) {
+                    showNotification('No result to download', 'error');
+                    return;
+                }
+                
+                const url = URL.createObjectURL(resultBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `faceswap-${Date.now()}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification('Download started!', 'success');
+            });
+            
+            newBtn.addEventListener('click', () => {
+                // Reset everything
+                sourceFile = null;
+                targetFile = null;
+                resultBlob = null;
+                
+                sourceBox.innerHTML = `
+                    <div class="upload-icon">👤</div>
+                    <h3>Source Face</h3>
+                    <p>Drag & drop or click to upload</p>
+                `;
+                
+                targetBox.innerHTML = `
+                    <div class="upload-icon">🖼️</div>
+                    <h3>Target Face</h3>
+                    <p>Drag & drop or click to upload</p>
+                `;
+                
+                sourceImg.style.display = 'none';
+                targetImg.style.display = 'none';
+                resultImg.style.display = 'none';
+                resultSection.style.display = 'none';
+                swapBtn.disabled = true;
+                
+                showNotification('Ready for new face swap!', 'success');
+            });
+        }
+        
+        function updateProgress(percent, text) {
+            progressBar.style.width = percent + '%';
+            loadingText.textContent = text;
+        }
+        
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'error' ? '#fee2e2' : 
+                                              type === 'success' ? '#d1fae5' : '#e0f2fe';
+            notification.style.color = type === 'error' ? '#dc2626' : 
+                                     type === 'success' ? '#059669' : '#0369a1';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        async function checkBackend() {
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    console.log('Backend connected successfully');
+                }
+            } catch (error) {
+                console.log('Using frontend-only mode');
+            }
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
